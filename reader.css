@@ -66,10 +66,15 @@ main { min-height: 0; }
 .toolbar-controls { justify-content: flex-end; flex-wrap: wrap; }
 .toolbar-controls label { display: flex; align-items: center; gap: .4rem; font-size: .88rem; color: var(--muted); }
 .reader button, .reader select { font-size: .91rem; }
-.stage { background: var(--stage); overflow: auto; position: relative; overscroll-behavior: contain; }
+.stage { background: var(--stage); overflow: auto; position: relative; overscroll-behavior: contain; touch-action: manipulation; }
 .page-wrap { display: grid; place-items: center; width: max-content; min-width: 100%; min-height: 100%; padding: 10px; }
 .page-wrap img { display: block; background: #dedbd0; box-shadow: 0 10px 30px #0005; }
 .page-message { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); color: #f4f3ea; max-width: min(85%, 34rem); text-align: center; }
+.immersive body, .immersive .reader { grid-template-rows: minmax(0, 1fr); }
+.immersive .topbar, .immersive .toolbar, .immersive .navigation { display: none; }
+.immersive .stage { background: #000; scrollbar-width: none; outline: none; }
+.immersive .page-wrap { padding: 0; }
+.immersive .page-wrap img { box-shadow: none; }
 .navigation { border-top: 1px solid var(--line); }
 .paging[data-direction="rtl"] { flex-direction: row-reverse; }
 #progress { accent-color: var(--accent); width: 100%; min-width: 3rem; max-width: 40rem; cursor: pointer; }

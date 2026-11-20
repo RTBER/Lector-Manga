@@ -29,6 +29,7 @@ let pageRequest = null;
 let objectURL = '';
 let noticeTimer;
 let dragDepth = 0;
+let changingFullscreen = false;
 
 function storeSettings() {
   settings.direction = $('direction').value;
@@ -227,8 +228,9 @@ function fitPage(width = Number($('page-image').getAttribute('width')), height =
   const stage = $('stage');
   if (image.hidden || !width || !height) return;
   const choice = $('zoom').value;
-  const widthRatio = Math.max(1, stage.clientWidth - 20) / width;
-  const heightRatio = Math.max(1, stage.clientHeight - 20) / height;
+  const padding = immersive() ? 0 : 20;
+  const widthRatio = Math.max(1, stage.clientWidth - padding) / width;
+  const heightRatio = Math.max(1, stage.clientHeight - padding) / height;
   const ratio = choice === 'fit' ? Math.min(widthRatio, heightRatio) : choice === 'width' ? widthRatio : Number(choice) / 100;
   image.style.width = `${Math.round(width * ratio)}px`;
   image.style.height = 'auto';
@@ -239,12 +241,39 @@ function step(delta) {
   if (chapter && target >= 0 && target < chapter.pages.length) void showPage(target);
 }
 
+function immersive() {
+  return document.documentElement.classList.contains('immersive');
+}
+
+function setImmersive(enabled) {
+  if (enabled === immersive()) return;
+  document.documentElement.classList.toggle('immersive', enabled);
+  if (enabled) notice('');
+  $(enabled ? 'stage' : 'fullscreen').focus({ preventScroll: true });
+  fitPage();
+}
+
 async function fullscreen() {
+  if (changingFullscreen) return;
+  const entering = !immersive();
+  if (!entering && !document.fullscreenElement) {
+    setImmersive(false);
+    return;
+  }
+  if (entering) setImmersive(true);
+  if (entering && !document.fullscreenEnabled) return;
+  changingFullscreen = true;
   try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen();
+    if (entering) await document.documentElement.requestFullscreen();
+    else {
+      await document.exitFullscreen();
+      setImmersive(false);
+    }
   } catch {
-    notice('El navegador no pudo entrar en pantalla completa.');
+    // A browser that blocks native fullscreen can still show the immersive layout.
+    if (!entering) setImmersive(false);
+  } finally {
+    changingFullscreen = false;
   }
 }
 
@@ -268,16 +297,36 @@ function updateDirection() {
 $('direction').addEventListener('change', () => { updateDirection(); storeSettings(); });
 $('zoom').addEventListener('change', () => { fitPage(); storeSettings(); });
 $('fullscreen').addEventListener('click', fullscreen);
-$('fullscreen').disabled = !document.fullscreenEnabled;
 document.addEventListener('fullscreenchange', () => {
-  $('fullscreen').textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa';
+  setImmersive(Boolean(document.fullscreenElement));
+});
+$('stage').addEventListener('click', event => {
+  if (!chapter || !event.detail) return;
+  const { left, top, width, height } = $('stage').getBoundingClientRect();
+  const x = 2 * (event.clientX - left) / width - 1;
+  const y = 2 * (event.clientY - top) / height - 1;
+  if (Math.max(Math.abs(x), Math.abs(y)) < 1 / 3) {
+    if (immersive()) void fullscreen();
+    return;
+  }
+  if (Math.abs(y) > Math.abs(x)) {
+    step(y > 0 ? 1 : -1);
+    return;
+  }
+  const rtl = $('direction').value === 'rtl';
+  step((x < 0) === rtl ? 1 : -1);
 });
 new ResizeObserver(() => fitPage()).observe($('stage'));
 updateDirection();
 
 document.addEventListener('keydown', event => {
   if (!chapter || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-  if (event.target.closest?.('input, select, textarea, button, [contenteditable]')) return;
+  if (event.key === 'Escape' && immersive()) {
+    event.preventDefault();
+    void fullscreen();
+    return;
+  }
+  if (event.target.closest?.('input, select, textarea, [contenteditable]')) return;
   const rtl = $('direction').value === 'rtl';
   switch (event.key) {
     case 'ArrowLeft': step(rtl ? 1 : -1); break;
@@ -286,7 +335,7 @@ document.addEventListener('keydown', event => {
     case 'PageDown': step(1); break;
     case 'Home': void showPage(0); break;
     case 'End': void showPage(chapter.pages.length - 1); break;
-    case 'f': case 'F': void fullscreen(); break;
+    case 'f': case 'F': if (!event.repeat) void fullscreen(); break;
     default: return;
   }
   event.preventDefault();

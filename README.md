@@ -8,7 +8,9 @@ Lector de ZIP, CBZ e imágenes para navegadores modernos de PC, iPad y móvil. V
 
 Abre el enlace y pulsa **Abrir archivo**. Elige el ZIP/CBZ o las imágenes desde tu dispositivo. En iPad, puedes añadir el sitio a la pantalla de inicio desde Compartir en Safari.
 
-Las páginas se ordenan por nombre. Incluye lectura de derecha a izquierda o al revés, zoom y navegación por página. La selección de carpetas y pantalla completa dependen del navegador.
+Las páginas se ordenan por nombre. Toca el borde inferior para avanzar o el superior para retroceder. Los lados respetan la dirección de lectura elegida. En la dirección de manga, la izquierda avanza y la derecha retrocede.
+
+El botón **Pantalla completa** oculta los controles. Toca el centro de la página o pulsa Esc o F para volver. Si Safari conserva sus propias barras, abre el lector desde el icono de la pantalla de inicio. La selección de carpetas depende del navegador.
 
 ## Privacidad y límites
 
